@@ -1,8 +1,10 @@
 <template v-slot:activator="{ on, attrs }">
 <div class="card-section">
-<v-row class="d-flex justify-center">
+<v-row class="d-flex justify-center cards-banner">
   <v-card
-    class=""
+    color="#2b2b2b"
+    dark
+    class="cards"
     max-width="344"
     outlined
   >
@@ -15,15 +17,15 @@
       </v-list-item-content>
 
       <v-list-item-avatar
-        tile
+        rounded
         size="80"
-        color="grey"
+        color="#383838"
       >
       <v-col>
-        <v-list-item-title class="mb-1">
-            No.of <br/>Songs
-        </v-list-item-title>
-        <h1>{{this.songs.length}}</h1>
+           <div class="card-sum-title">
+             Total songs
+           </div>
+        <h1 class="text-title">{{this.songs.length}}</h1>
       </v-col>
       </v-list-item-avatar>
     </v-list-item>
@@ -44,7 +46,8 @@
     </v-card-actions>
   </v-card>
   <v-card
-    class=""
+    dark
+    color="#2b2b2b"
     max-width="344"
     outlined
   >
@@ -67,6 +70,8 @@
     </v-list-item>
   </v-card>
   <v-card
+    dark
+    color="#2b2b2b"
     class=""
     max-width="344"
     outlined
@@ -82,23 +87,26 @@
         <v-list-item-subtitle>Song description</v-list-item-subtitle>
       </v-list-item-content>
       <v-list-item-avatar
-        tile
+        rounded
         size="80"
-        color="grey"
+        color="#383838"
       ></v-list-item-avatar>
     </v-list-item>
 
-    <v-card-actions>
+    <v-card-actions class="d-flex justify-center">
       <v-btn
-        outlined
-        rounded
+        tile
         text
+        block
       >
-        Button
+        View
       </v-btn>
     </v-card-actions>
   </v-card>
 </v-row>
+<SongsTable
+:is-refetch="isRefetch"
+/>
 <v-row justify="center">
     <v-dialog
       v-model="dialog"
@@ -106,6 +114,7 @@
       max-width="600px"
     >
       <AddSong
+       @refetchData="refetchData"
        @close="dialog = false"
       />
     </v-dialog>
@@ -117,17 +126,36 @@
 <script>
 import SongsService from '../services/SongsService'
 import AddSong from './AddSongModal.vue'
+import SongsTable from './SongsTable.vue'
 export default {
   data: () => ({
     songs: [],
-    dialog: false
+    dialog: false,
+    isRefetch: false
   }),
   components: {
-    AddSong
+    AddSong,
+    SongsTable
+  },
+  async created () {
+    await this.fetchSongs()
   },
   async mounted () {
-    const res = await SongsService.getAllSongs()
-    this.songs = res.data
+    await this.fetchSongs()
+  },
+  methods: {
+    async fetchSongs () {
+      const res = await SongsService.getAllSongs()
+      this.songs = res.data
+    },
+    async refetchData (val) {
+      if (val) {
+        this.dialog = false
+        this.isRefetch = true
+        await this.fetchSongs()
+      }
+    }
+
   }
 }
 </script>
@@ -135,5 +163,25 @@ export default {
 <style>
 .card-section{
   margin-top: 30px;
+}
+
+.cards-banner{
+  gap: 15px;
+}
+
+.card-sum-title {
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  font-weight: bolder;
+  font-size: 8px;
+}
+
+h1 {
+  color: #a274f3;
+  outline-width: 1rem;
+}
+
+.cards{
+  color: #fafafa;
 }
 </style>

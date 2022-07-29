@@ -1,7 +1,9 @@
 <template>
-  <v-card
-    class="mx-auto overflow-hidden"
-    height="auto"
+  <v-container
+    fluid
+    pa-0 ma-0
+    fill-height
+    class="overflow-hidden"
     dark
   >
     <v-app-bar
@@ -9,14 +11,14 @@
       dark
     >
       <v-app-bar-nav-icon @click="drawer = true"></v-app-bar-nav-icon>
-
-      <v-toolbar-title>Dashboard</v-toolbar-title>
+      <v-toolbar-title class="text-title">Dashboard</v-toolbar-title>
     </v-app-bar>
 
     <v-navigation-drawer
       v-model="drawer"
       absolute
       temporary
+      dark
     >
       <v-list
         nav
@@ -35,9 +37,16 @@
 
           <v-list-item>
             <v-list-item-icon>
-              <v-icon>mdi-account</v-icon>
+              <v-icon>mdi-music-box</v-icon>
             </v-list-item-icon>
             <v-list-item-title>My Songs</v-list-item-title>
+          </v-list-item>
+
+          <v-list-item>
+            <v-list-item-icon>
+              <v-icon>mdi-exit-to-app </v-icon>
+            </v-list-item-icon>
+            <v-list-item-title>Log Out</v-list-item-title>
           </v-list-item>
         </v-list-item-group>
       </v-list>
@@ -45,7 +54,7 @@
     <v-container fluid class="d-flex w-100">
         <slot name="body"></slot>
     </v-container>
-  </v-card>
+  </v-container>
 </template>
 
 <script>
@@ -53,7 +62,7 @@ import Cards from './Cards.vue'
 export default {
   data: () => ({
     drawer: false,
-    group: null,
+    group: null
   }),
   components: {
     Cards

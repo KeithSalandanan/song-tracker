@@ -1,12 +1,13 @@
 <template>
-<v-container class="song-section">
-    <div class="title">
+<v-container dark height="418px" class="song-section">
+    <div class="table-title">
         <h1>Your Songs</h1>
     </div>
     <v-data-table
+      dark
       :headers="headers"
       :items="songs"
-      sort-by="title"
+      sort-by="id"
       class="elevation-1"
     >
     <template v-slot:top>
@@ -26,6 +27,7 @@
                 <v-text-field
                   label="Title of Song*"
                   required
+                  :rules="[required]"
                   v-model="editedItem.title"
                 ></v-text-field>
               </v-col>
@@ -33,6 +35,7 @@
                 <v-text-field
                   label="Artist*"
                   required
+                  :rules="[required]"
                   v-model="editedItem.artist"
                 ></v-text-field>
               </v-col>
@@ -43,6 +46,7 @@
                 <v-text-field
                   label="Album*"
                   required
+                  :rules="[required]"
                   v-model="editedItem.album"
                 ></v-text-field>
               </v-col>
@@ -53,6 +57,7 @@
                 <v-text-field
                   label="Link*"
                   required
+                  :rules="[required]"
                   v-model="editedItem.link"
                 ></v-text-field>
               </v-col>
@@ -106,23 +111,23 @@
         mdi-delete
       </v-icon>
     </template>
-    <template v-slot:no-data>
-      <v-btn
-        color="primary"
-        @click="initialize"
-      >
-        Reset
-      </v-btn>
-    </template>
   </v-data-table>
 </v-container>
 </template>
 
 <script>
 import SongsService from '@/services/SongsService'
+import vuetifyToast from 'vuetify-toast'
 export default {
+  props: {
+    isRefetch: {
+      type: Boolean,
+      default: false
+    }
+  },
   data () {
     return {
+      required: (value) => !!value || 'Required.',
       dialog: false,
       dialogDelete: false,
       headers: [
@@ -130,7 +135,7 @@ export default {
           text: 'Song Title',
           align: 'start',
           sortable: false,
-          value: 'title',
+          value: 'title'
         },
         { text: 'Artist', value: 'artist' },
         { text: 'Album', value: 'album' },
@@ -143,74 +148,116 @@ export default {
         title: '',
         artist: '',
         album: '',
-        link: '',
+        link: ''
       },
       defaultItem: {
         title: null,
         artist: null,
         album: null,
-        link: null,
+        link: null
       },
-
+      error: null
     }
   },
   async mounted () {
-    const res = await SongsService.getAllSongs()
-    this.songs = res.data
-    console.log(this.songs)
+    await this.fetchSongs()
   },
   watch: {
-      dialog (val) {
-        val || this.close()
-      },
-      dialogDelete (val) {
-        val || this.closeDelete()
-      },
-    },
-  methods: {
-    editItem (item) {
-        this.editedIndex = this.songs.indexOf(item)
-        this.editedItem = Object.assign({}, item)
-        this.dialog = true
-      },
-
-      deleteItem (item) {
-        this.editedIndex = this.songs.indexOf(item)
-        this.editedItem = Object.assign({}, item)
-        this.dialogDelete = true
-      },
-
-      deleteItemConfirm () {
-        this.songs.splice(this.editedIndex, 1)
-        this.closeDelete()
-      },
-
-      close () {
-        this.dialog = false
-        this.$nextTick(() => {
-          this.editedItem = Object.assign({}, this.defaultItem)
-          this.editedIndex = -1
-        })
-      },
-
-      closeDelete () {
-        this.dialogDelete = false
-        this.$nextTick(() => {
-          this.editedItem = Object.assign({}, this.defaultItem)
-          this.editedIndex = -1
-        })
-      },
-
-      save () {
-        if (this.editedIndex > -1) {
-          Object.assign(this.songs[this.editedIndex], this.editedItem)
-        } else {
-          this.songs.push(this.editedItem)
-        }
-        this.close()
+    isRefetch: {
+      immediate: true,
+      deep: true,
+      handler (newValue, oldValue) {
+        this.fetchSongs()
+        this.isRefetch = false
       }
+    },
+    dialog (val) {
+      console.log(this.isRefetch)
+      val || this.close()
+    },
+    dialogDelete (val) {
+      val || this.closeDelete()
+    }
+  },
+  methods: {
+    async fetchSongs () {
+      const res = await SongsService.getAllSongs()
+      this.songs = res.data
+      console.log(this.songs)
+    },
+    editItem (item) {
+      this.editedIndex = this.songs.indexOf(item)
+      this.editedItem = Object.assign({}, item)
+      this.dialog = true
+    },
+
+    deleteItem (item) {
+      this.editedIndex = this.songs.indexOf(item)
+      this.editedItem = Object.assign({}, item)
+      this.dialogDelete = true
+    },
+
+    async deleteItemConfirm () {
+      try {
+        await SongsService.delete(this.editedItem.id)
+        vuetifyToast.success(`The song ${this.editedItem.title} was deleted.`)
+      } catch (error) {
+        console.log(error)
+        vuetifyToast.error('Unexpected error in deleting the song')
+      }
+      this.isRefetch = true
+      this.songs.splice(this.editedIndex, 1)
+      this.closeDelete()
+    },
+    close () {
+      this.dialog = false
+      this.$nextTick(() => {
+        this.editedItem = Object.assign({}, this.defaultItem)
+        this.editedIndex = -1
+      })
+    },
+    closeDelete () {
+      this.dialogDelete = false
+      this.$nextTick(() => {
+        this.editedItem = Object.assign({}, this.defaultItem)
+        this.editedIndex = -1
+      })
+    },
+    async save () {
+      this.error = null
+      const areAllFieldsFilledIn = Object
+        .keys(this.editedItem)
+        .every(key => !!this.editedItem[key])
+
+      if (!areAllFieldsFilledIn) {
+        vuetifyToast.success('Please fill in all the required fields')
+        return
+      }
+      if (this.editedIndex > -1) {
+        Object.assign(this.songs[this.editedIndex], this.editedItem)
+        console.log('editing')
+        try {
+          await SongsService.put(this.editedItem)
+          this.$router.push({
+            name: 'song',
+            params: {
+              songId: this.editedItem.id
+            }
+          })
+          vuetifyToast.success('Song updated successfully.')
+          this.isRefetch = true
+          this.$router.push({name: 'dashboard'})
+          // this.$emit('refetchData', true)
+          // this.resetFields()
+        } catch (error) {
+          console.log(error)
+        }
+      } else {
+        this.songs.push(this.editedItem)
+      }
+      this.close()
+    }
   }
-  
 }
 </script>
 
@@ -222,8 +269,10 @@ h1{
     display: flex;
     flex-direction: column;
     margin-top: 30px;
+    min-height: 418px;
 }
-.title {
+.table-title {
+    font-family: 'Rubik', sans-serif;
     display: flex;
     justify-content: start;
     padding-bottom: 15px;

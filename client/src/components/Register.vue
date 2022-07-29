@@ -21,7 +21,6 @@
         </v-row>
       </v-container>
     </v-form>
-    <div v-html="error" class="error"/><br>
 
   <v-container>
     <p>Already have an account? <router-link to="login" >Login</router-link> here</p>
@@ -31,6 +30,7 @@
 
 <script>
 import AuthenticationService from '@/services/AuthenticationService'
+import vuetifyToast from 'vuetify-toast'
 export default {
   data () {
     return {
@@ -51,6 +51,7 @@ export default {
         this.$store.dispatch('setUser', res.data.user)
       } catch (error) {
         this.error = error.response.data.error
+        vuetifyToast.error(this.error)
       }
     }
   }

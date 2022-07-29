@@ -70,31 +70,61 @@
 
 <script>
 import SongsService from '../services/SongsService'
-  export default {
-    data: () => ({
-      required: (value) =>  !!value || 'Required.',
-      song: {
-        title: null,
-        artist: null,
-        album: null,
-        link: null,
+import vuetifyToast from 'vuetify-toast'
 
-      },
-      dialog: false,
-    }),
-    methods : {
-      async createSong(){
-        console.log(this.song)
-        try {
-          await SongsService.addSong(this.song)
-          this.closeModal()
-        } catch (error) {
-          console.log(error)
-        }
-      },
-      closeModal(){
-        this.$emit('close')
-      }
+export default {
+  data: () => ({
+    required: (value) => !!value || 'Required.',
+    song: {
+      title: null,
+      artist: null,
+      album: null,
+      link: null
+    },
+    dialog: false,
+    error: null,
+    defaultItem: {
+      title: null,
+      artist: null,
+      album: null,
+      link: null
     }
+  }),
+  methods: {
+    async createSong () {
+      this.error = null
+      const areAllFieldsFilledIn = Object
+        .keys(this.song)
+        .every(key => !!this.song[key])
+
+      if (!areAllFieldsFilledIn) {
+        vuetifyToast.success('Please fill in all the required fields')
+        return
+      }
+
+      try {
+        await SongsService.addSong(this.song)
+        vuetifyToast.success('Song added successfully.')
+        this.$emit('refetchData', true)
+        this.resetFields()
+      } catch (error) {
+        console.log(error)
+      }
+    },
+    closeModal () {
+      console.log(this.song)
+      this.resetFields()
+      console.log(this.song)
+      this.$emit('close')
+    },
+    resetFields () {
+      this.$nextTick(() => {
+        this.song = Object.assign({}, this.defaultItem)
+      })
+    }
+  },
+  components: {
+    vuetifyToast
   }
+}
 </script>

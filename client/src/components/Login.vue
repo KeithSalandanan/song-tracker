@@ -33,7 +33,8 @@
 
 <script>
 import AuthenticationService from '@/services/AuthenticationService'
-import $store from '../store/store'
+import vuetifyToast from 'vuetify-toast'
+import $store from '../store/index'
 export default {
   data () {
     return {
@@ -51,13 +52,14 @@ export default {
           email: this.email,
           password: this.password
         })
+        vuetifyToast.success('Logged In')
         $store.dispatch('setToken', response.data.token)
         $store.dispatch('setUser', response.data.user)
         this.isUserLoggedIn = $store.state.isUserLoggedIn
         this.$router.push({name: 'dashboard'})
       } catch (error) {
-        console.log(error)
         this.error = error.response.data.error
+        vuetifyToast.error(this.error)
       }
     }
   }
